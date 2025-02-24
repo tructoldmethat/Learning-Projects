@@ -1,0 +1,50 @@
+Swapped Food Delivery: https://datalemur.com/questions/sql-swapped-food-delivery
+
+SOLUTION 1: 
+--Identify the last row by calculating the total count of orders
+WITH total_count AS(
+SELECT COUNT(*) AS total_count
+FROM orders
+)
+--We add a column of the last order to every row
+, orders_last AS
+(SELECT order_id,item, total_count AS last_order
+FROM orders
+CROSS JOIN total_count --With CROSS JOIN you just combine 2 columns without needing a joined column
+)
+--Case when odd order_id, the item will be swapped with the next one, even order_id will be swapped with the previous one, the last order will be last_order
+SELECT CASE WHEN o.order_id IN (1,3,5,7,9,11,13) THEN o.order_id+1 --Replace order_id IN () with the function that can check if the order_id is odd or even?
+WHEN o.order_id IN (2,4,6,8,10,12,14) THEN o.order_id-1
+WHEN o.order_id=l.last_order THEN o.order_id
+ELSE NULL END AS corrected_order_id
+, o.item
+FROM orders o
+JOIN orders_last l ON o.order_id=l.order_id
+ORDER BY corrected_order_id
+
+SOLUTION 2: Replaced with a function to check even or odd
+NEW functions:
+order_id%2!=0: order_id divided by 2 gives a remaining other than 0; != is the same as <>
+CROSS JOIN allows you to join all columns of 2 tables without any similar column
+
+--Identify the last row by calculating the total count of orders
+WITH total_count AS(
+SELECT COUNT(*) AS total_count
+FROM orders
+)
+--We add a column of the last order to every row
+, orders_last AS
+(SELECT order_id,item, total_count AS last_order
+FROM orders
+CROSS JOIN total_count --With CROSS JOIN you just combine 2 columns without needing a joined column
+)
+
+--Case when odd order_id, the item will be swapped with the next one, even order_id will be swapped with the previous one, the last order will be last_order
+SELECT CASE WHEN o.order_id % 2<>0 AND o.order_id<>l.last_order THEN o.order_id+1--Check if the remaining after order_id/2 <> 0 and it is <> the last oder then the order_id is the next one
+WHEN o.order_id % 2!=0 and o.order_id=l.last_order THEN o.order_id-- Check if the remaining after order_id/2 <>0 and it is equal to the last order, then the order_id remains the same
+ELSE o.order_id-1 END AS corrected_order_id--Other cases, the remaining order is even (order_id%2=0) then the order_id is the previous one
+, o.item
+FROM orders o
+JOIN orders_last l ON o.order_id=l.order_id
+ORDER BY corrected_order_id
+
